@@ -2,6 +2,14 @@ const apiUrl = 'http://localhost:8000';
 let currentUser = null;
 
 // Общие функции
+const showNotification = (message, isSuccess) => {
+  const notification = document.getElementById('notification');
+  notification.textContent = message;
+  notification.className = `notification ${isSuccess ? 'success' : 'error'}`;
+  notification.style.display = 'block';
+  setTimeout(() => notification.style.display = 'none', 3000);
+};
+
 const handleFormSubmit = (formId, endpoint, successMessage, redirectPage) => {
   const form = document.getElementById(formId);
   if (!form) return;
@@ -18,32 +26,51 @@ const handleFormSubmit = (formId, endpoint, successMessage, redirectPage) => {
         body: JSON.stringify({username, password})
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || 'Error');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Ошибка сервера');
+      }
 
-      alert(successMessage);
+      localStorage.setItem('username', username);
+      localStorage.setItem('password', password);
+      showNotification(successMessage, true);
+
       if (redirectPage) {
-        localStorage.setItem('username', username);
-        localStorage.setItem('password', password);
         window.location.href = redirectPage;
       }
+
     } catch (error) {
-      alert(error.message);
+      showNotification(error.message, false);
     }
   };
 };
 
 async function initNotes() {
-  const username = localStorage.getItem('username');
-  const password = localStorage.getItem('password');
+  const protectedPaths = ['/notes.html', '/note-editor.html'];
+  const currentPath = window.location.pathname;
 
-  if (!username || !password) {
-    window.location.href = 'index.html';
-    return;
+  if (protectedPaths.some(path => currentPath.endsWith(path))) {
+    const username = localStorage.getItem('username');
+    const password = localStorage.getItem('password');
+
+    if (!username || !password) {
+      window.location.replace('index.html');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiUrl}/validate-auth?username=${username}&password=${password}`);
+      if (!response.ok) {
+        localStorage.clear();
+        throw new Error('Session expired');
+      }
+      currentUser = { username, password };
+      await loadNotes();
+    } catch (error) {
+      localStorage.clear();
+      window.location.replace('index.html');
+    }
   }
-
-  currentUser = {username, password};
-  await loadNotes();
 }
 
 async function loadNotes() {
@@ -132,10 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
   handleFormSubmit('loginForm', 'login', 'Login successful!', 'notes.html');
   handleFormSubmit('registerForm', 'register', 'Registered!', 'index.html');
 
-  if (window.location.pathname.includes('notes.html') ||
-     window.location.pathname.includes('note-editor.html')) {
-    initNotes();
-  }
+  // Универсальная проверка для всех страниц
+  initNotes().catch(error => {
+    console.error('Auth check failed:', error);
+    window.location.replace('index.html');
+  });
 
   const noteId = new URLSearchParams(window.location.search).get('id');
   if (noteId) {
@@ -168,4 +196,14 @@ async function deleteNote(noteId) {
 
 function editNote(noteId) {
   window.location.href = `note-editor.html?id=${noteId}`;
+}
+
+function logout() {
+  localStorage.removeItem('username');
+  localStorage.removeItem('password');
+  window.location.replace('index.html');
+
+  if (window.history.replaceState) {
+    window.history.replaceState(null, null, 'index.html');
+  }
 }

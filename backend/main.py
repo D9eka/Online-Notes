@@ -177,5 +177,15 @@ async def get_file(filename: str):
         raise HTTPException(404, "File not found")
     return FileResponse(file_path)
 
+@app.get("/validate-auth")
+async def validate_auth(
+    username: str = Query(...),
+    password: str = Query(...)
+):
+    user = next((u for u in fake_db if u["username"] == username and u["password"] == password), None)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return {"status": "valid"}
+
 # Отдаем статические файлы фронтенда
 app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
