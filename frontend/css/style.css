@@ -3,8 +3,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
+    padding: 20px;
     background-color: #f0f2f5;
 }
 
@@ -13,10 +14,11 @@ body {
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    width: 300px;
+    width: 100%;
+    max-width: 800px;
 }
 
-input {
+input, textarea {
     width: 100%;
     padding: 10px;
     margin: 8px 0;
@@ -26,56 +28,67 @@ input {
 }
 
 button {
-    width: 100%;
-    padding: 10px;
+    padding: 10px 20px;
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    margin-top: 10px;
+    margin: 5px 0;
 }
 
 button:hover {
     background-color: #0056b3;
 }
 
-a {
-    color: #007bff;
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-#notesList {
-    margin-top: 20px;
-}
-
 .note-item {
     background: #fff;
     border: 1px solid #ddd;
     padding: 15px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     border-radius: 4px;
+    position: relative;
+    word-break: break-word;
+}
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
 }
 
 .note-item h3 {
-    margin: 0 0 10px 0;
+    margin: 0;
+    flex-grow: 1;
+    max-width: calc(100% - 170px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-textarea {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0;
-    border: 1px solid #ddd;
+.note-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.file-attachment {
+    margin-top: 10px;
+    padding: 8px;
+    background: #f5f5f5;
     border-radius: 4px;
-    box-sizing: border-box;
-    resize: vertical;
-    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-button {
-    margin: 5px;
+.file-attachment a {
+    color: #007bff;
+    text-decoration: none;
+    margin-left: 8px;
+}
+
+#fileInput {
+    margin: 15px 0;
 }

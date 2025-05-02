@@ -5,12 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="dbd148da-0605-4adf-ab14-80a4d51d5dd5" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/frontend/note-editor.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/notes.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/css/style.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/js/script.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/js/script.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/note-editor.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/note-editor.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,6 +93,7 @@
       <updated>1746166717521</updated>
       <workItem from="1746166718555" duration="424000" />
       <workItem from="1746167197185" duration="859000" />
+      <workItem from="1746179283050" duration="688000" />
     </task>
     <servers />
   </component>

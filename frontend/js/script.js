@@ -14,12 +14,12 @@ const handleFormSubmit = (formId, endpoint, successMessage, redirectPage) => {
     try {
       const response = await fetch(`${apiUrl}/${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username, password})
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || 'Something went wrong');
+      if (!response.ok) throw new Error(data.detail || 'Error');
 
       alert(successMessage);
       if (redirectPage) {
@@ -33,37 +33,16 @@ const handleFormSubmit = (formId, endpoint, successMessage, redirectPage) => {
   };
 };
 
-// Работа с пользователями
-const loadUsers = async () => {
-  try {
-    const response = await fetch(`${apiUrl}/users`);
-    const users = await response.json();
-    
-    const usersList = document.getElementById('usersList');
-    if (usersList) {
-      usersList.innerHTML = users.map(user => `
-        <div class="user-item">
-          <strong>ID:</strong> ${user.id}<br>
-          <strong>Username:</strong> ${user.username}
-        </div>
-      `).join('');
-    }
-  } catch (error) {
-    console.error('Error loading users:', error);
-  }
-};
-
-// Работа с заметками
 async function initNotes() {
   const username = localStorage.getItem('username');
   const password = localStorage.getItem('password');
-  
+
   if (!username || !password) {
     window.location.href = 'index.html';
     return;
   }
-  
-  currentUser = { username, password };
+
+  currentUser = {username, password};
   await loadNotes();
 }
 
@@ -71,106 +50,119 @@ async function loadNotes() {
   try {
     const response = await fetch(`${apiUrl}/notes?username=${currentUser.username}&password=${currentUser.password}`);
     const notes = await response.json();
-    
+
     const notesList = document.getElementById('notesList');
     if (notesList) {
       notesList.innerHTML = notes.map(note => `
         <div class="note-item">
-          <h3>${note.title}</h3>
-          <p>${note.content.substring(0, 50)}...</p>
+          <div class="note-header">
+            <h3>${note.title}</h3>
+            <div class="note-actions">
+              <button onclick="editNote(${note.id})">Edit</button>
+              <button onclick="deleteNote(${note.id})">Delete</button>
+            </div>
+          </div>
+          <p>${note.content.substring(0, 100)}...</p>
+          ${note.files.map(file => `
+            <div class="file-attachment">
+              <a href="${apiUrl}/files/${file.path}" download="${file.name}">${file.name}</a>
+            </div>
+          `).join('')}
           <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
-          <button onclick="editNote(${note.id})">Edit</button>
-          <button onclick="deleteNote(${note.id})">Delete</button>
         </div>
       `).join('');
     }
   } catch (error) {
-    console.error('Error loading notes:', error);
+    console.error('Error:', error);
   }
 }
 
-async function loadNoteForEditing(noteId) {
+async function deleteFile(noteId, fileId) {
+  if (confirm('Delete this file?')) {
+    await fetch(`${apiUrl}/files/${fileId}?note_id=${noteId}`, { method: 'DELETE' });
+    await loadNotes();
+  }
+}
+
+document.getElementById('noteForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const title = document.getElementById('noteTitle').value;
+  const content = document.getElementById('noteContent').value;
+  const noteId = new URLSearchParams(window.location.search).get('id');
+
   try {
-    const response = await fetch(`${apiUrl}/notes?username=${currentUser.username}&password=${currentUser.password}`);
-    const notes = await response.json();
-    const note = notes.find(n => n.id == noteId);
-    
-    if (note) {
-      document.getElementById('editorTitle').textContent = 'Edit Note';
-      document.getElementById('noteTitle').value = note.title;
-      document.getElementById('noteContent').value = note.content;
+    let response;
+    if (noteId) {
+      response = await fetch(`${apiUrl}/notes/${noteId}?username=${currentUser.username}&password=${currentUser.password}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title, content})
+      });
+    } else {
+      response = await fetch(`${apiUrl}/notes?username=${currentUser.username}&password=${currentUser.password}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title, content})
+      });
     }
+
+    const newNote = await response.json();
+    await uploadFiles(newNote.id);
+    window.location.href = 'notes.html';
   } catch (error) {
-    console.error('Error loading note:', error);
+    alert('Error: ' + error.message);
+  }
+});
+
+async function uploadFiles(noteId) {
+  const files = document.getElementById('fileInput').files;
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    await fetch(`${apiUrl}/notes/${noteId}/files?username=${currentUser.username}&password=${currentUser.password}`, {
+      method: 'POST',
+      body: formData
+    });
   }
 }
 
-// Обработчики событий
 document.addEventListener('DOMContentLoaded', () => {
-  // Инициализация форм
   handleFormSubmit('loginForm', 'login', 'Login successful!', 'notes.html');
-  handleFormSubmit('registerForm', 'register', 'Registration successful!', 'index.html');
-  
-  // Загрузка пользователей
-  loadUsers();
+  handleFormSubmit('registerForm', 'register', 'Registered!', 'index.html');
 
-  // Инициализация заметок
-  if (window.location.pathname.includes('notes.html') || 
-      window.location.pathname.includes('note-editor.html')) {
+  if (window.location.pathname.includes('notes.html') ||
+     window.location.pathname.includes('note-editor.html')) {
     initNotes();
   }
 
-  // Редактор заметок
-  const urlParams = new URLSearchParams(window.location.search);
-  const noteId = urlParams.get('id');
-  if (noteId) loadNoteForEditing(noteId);
-
-  // Обработчик формы редактора
-  document.getElementById('noteForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    if (!currentUser) {
-      alert('Session expired. Please login again.');
-      window.location.href = 'index.html';
-      return;
-    }
-
-    const title = document.getElementById('noteTitle').value;
-    const content = document.getElementById('noteContent').value;
-    const noteId = urlParams.get('id');
-
-    try {
-      if (noteId) {
-        await fetch(`${apiUrl}/notes/${noteId}?username=${currentUser.username}&password=${currentUser.password}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, content })
-        });
-      } else {
-        await fetch(`${apiUrl}/notes?username=${currentUser.username}&password=${currentUser.password}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, content })
-        });
-      }
-      window.location.href = 'notes.html';
-    } catch (error) {
-      alert('Error saving note: ' + error.message);
-    }
-  });
+  const noteId = new URLSearchParams(window.location.search).get('id');
+  if (noteId) {
+    fetch(`${apiUrl}/notes?username=${currentUser?.username}&password=${currentUser?.password}`)
+      .then(res => res.json())
+      .then(notes => {
+        const note = notes.find(n => n.id == noteId);
+        if (note) {
+          document.getElementById('noteTitle').value = note.title;
+          document.getElementById('noteContent').value = note.content;
+          document.getElementById('existingFiles').innerHTML = note.files.map(file => `
+            <div class="file-attachment">
+              ${file.name}
+              <button onclick="deleteFile('${noteId}', '${file.id}')">×</button>
+            </div>
+          `).join('');
+        }
+      });
+  }
 });
 
-// Вспомогательные функции
 async function deleteNote(noteId) {
-  if (confirm('Are you sure you want to delete this note?')) {
-    try {
-      await fetch(`${apiUrl}/notes/${noteId}?username=${currentUser.username}&password=${currentUser.password}`, {
-        method: 'DELETE'
-      });
-      await loadNotes();
-    } catch (error) {
-      alert('Error deleting note: ' + error.message);
-    }
+  if (confirm('Delete this note?')) {
+    await fetch(`${apiUrl}/notes/${noteId}?username=${currentUser.username}&password=${currentUser.password}`, {
+      method: 'DELETE'
+    });
+    await loadNotes();
   }
 }
 
