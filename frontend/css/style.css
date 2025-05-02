@@ -48,3 +48,34 @@ a {
 a:hover {
     text-decoration: underline;
 }
+
+#notesList {
+    margin-top: 20px;
+}
+
+.note-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+.note-item h3 {
+    margin: 0 0 10px 0;
+}
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 200px;
+}
+
+button {
+    margin: 5px;
+}
