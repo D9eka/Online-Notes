@@ -1,3 +1,5 @@
 fastapi
-uvicorn[standard]
-python-multipart
+uvicorn
+passlib
+bcrypt
+python-jose

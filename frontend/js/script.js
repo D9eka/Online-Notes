@@ -1,5 +1,4 @@
 const apiUrl = 'http://localhost:8000';
-let currentUser = null;
 
 // Общие функции
 const showNotification = (message, isSuccess) => {
@@ -31,8 +30,10 @@ const handleFormSubmit = (formId, endpoint, successMessage, redirectPage) => {
         throw new Error(errorData.detail || 'Ошибка сервера');
       }
 
-      localStorage.setItem('username', username);
-      localStorage.setItem('password', password);
+      const data = await response.json();
+      if (endpoint === 'login') {
+        localStorage.setItem('token', data.access_token);
+      }
       showNotification(successMessage, true);
 
       if (redirectPage) {
@@ -45,39 +46,31 @@ const handleFormSubmit = (formId, endpoint, successMessage, redirectPage) => {
   };
 };
 
-async function initNotes() {
-  const protectedPaths = ['/notes.html', '/note-editor.html'];
-  const currentPath = window.location.pathname;
-
-  if (protectedPaths.some(path => currentPath.endsWith(path))) {
-    const username = localStorage.getItem('username');
-    const password = localStorage.getItem('password');
-
-    if (!username || !password) {
-      window.location.replace('index.html');
-      return;
-    }
-
-    try {
-      const response = await fetch(`${apiUrl}/validate-auth?username=${username}&password=${password}`);
-      if (!response.ok) {
-        localStorage.clear();
-        throw new Error('Session expired');
-      }
-      currentUser = { username, password };
-      await loadNotes();
-    } catch (error) {
-      localStorage.clear();
-      window.location.replace('index.html');
-    }
+async function authFetch(url, options = {}) {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.location.replace('index.html');
+    throw new Error('No token');
   }
+
+  const headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${token}`
+  };
+
+  const response = await fetch(url, { ...options, headers });
+  if (response.status === 401) {
+    localStorage.removeItem('token');
+    window.location.replace('index.html');
+    throw new Error('Unauthorized');
+  }
+  return response;
 }
 
 async function loadNotes() {
   try {
-    const response = await fetch(`${apiUrl}/notes?username=${currentUser.username}&password=${currentUser.password}`);
+    const response = await authFetch(`${apiUrl}/notes`);
     const notes = await response.json();
-
     const notesList = document.getElementById('notesList');
     if (notesList) {
       notesList.innerHTML = notes.map(note => `
@@ -106,34 +99,31 @@ async function loadNotes() {
 
 async function deleteFile(noteId, fileId) {
   if (confirm('Delete this file?')) {
-    await fetch(`${apiUrl}/files/${fileId}?note_id=${noteId}`, { method: 'DELETE' });
+    await authFetch(`${apiUrl}/files/${fileId}?note_id=${noteId}`, { method: 'DELETE' });
     await loadNotes();
   }
 }
 
 document.getElementById('noteForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-
   const title = document.getElementById('noteTitle').value;
   const content = document.getElementById('noteContent').value;
   const noteId = new URLSearchParams(window.location.search).get('id');
-
   try {
     let response;
     if (noteId) {
-      response = await fetch(`${apiUrl}/notes/${noteId}?username=${currentUser.username}&password=${currentUser.password}`, {
+      response = await authFetch(`${apiUrl}/notes/${noteId}`, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({title, content})
       });
     } else {
-      response = await fetch(`${apiUrl}/notes?username=${currentUser.username}&password=${currentUser.password}`, {
+      response = await authFetch(`${apiUrl}/notes`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({title, content})
       });
     }
-
     const newNote = await response.json();
     await uploadFiles(newNote.id);
     window.location.href = 'notes.html';
@@ -147,31 +137,31 @@ async function uploadFiles(noteId) {
   for (const file of files) {
     const formData = new FormData();
     formData.append('file', file);
-
-    await fetch(`${apiUrl}/notes/${noteId}/files?username=${currentUser.username}&password=${currentUser.password}`, {
+    await authFetch(`${apiUrl}/notes/${noteId}/files`, {
       method: 'POST',
       body: formData
     });
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  handleFormSubmit('loginForm', 'login', 'Login successful!', 'notes.html');
-  handleFormSubmit('registerForm', 'register', 'Registered!', 'index.html');
-
-  // Универсальная проверка для всех страниц
-  initNotes().catch(error => {
-    console.error('Auth check failed:', error);
-    window.location.replace('index.html');
-  });
-
-  const noteId = new URLSearchParams(window.location.search).get('id');
-  if (noteId) {
-    fetch(`${apiUrl}/notes?username=${currentUser?.username}&password=${currentUser?.password}`)
-      .then(res => res.json())
-      .then(notes => {
-        const note = notes.find(n => n.id == noteId);
-        if (note) {
+async function initNotes() {
+  const protectedPaths = ['/notes.html', '/note-editor.html'];
+  const currentPath = window.location.pathname;
+  if (protectedPaths.some(path => currentPath.endsWith(path))) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.replace('index.html');
+      return;
+    }
+    if (currentPath.endsWith('notes.html')) {
+      await loadNotes();
+    }
+    if (currentPath.endsWith('note-editor.html')) {
+      const noteId = new URLSearchParams(window.location.search).get('id');
+      if (noteId) {
+        try {
+          const response = await authFetch(`${apiUrl}/notes/${noteId}`);
+          const note = await response.json();
           document.getElementById('noteTitle').value = note.title;
           document.getElementById('noteContent').value = note.content;
           document.getElementById('existingFiles').innerHTML = note.files.map(file => `
@@ -180,16 +170,26 @@ document.addEventListener('DOMContentLoaded', () => {
               <button onclick="deleteFile('${noteId}', '${file.id}')">×</button>
             </div>
           `).join('');
+        } catch (error) {
+          console.error('Error loading note:', error);
         }
-      });
+      }
+    }
   }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  handleFormSubmit('loginForm', 'login', 'Login successful!', 'notes.html');
+  handleFormSubmit('registerForm', 'register', 'Registered!', 'index.html');
+  initNotes().catch(error => {
+    console.error('Init failed:', error);
+    window.location.replace('index.html');
+  });
 });
 
 async function deleteNote(noteId) {
   if (confirm('Delete this note?')) {
-    await fetch(`${apiUrl}/notes/${noteId}?username=${currentUser.username}&password=${currentUser.password}`, {
-      method: 'DELETE'
-    });
+    await authFetch(`${apiUrl}/notes/${noteId}`, { method: 'DELETE' });
     await loadNotes();
   }
 }
@@ -199,11 +199,6 @@ function editNote(noteId) {
 }
 
 function logout() {
-  localStorage.removeItem('username');
-  localStorage.removeItem('password');
+  localStorage.removeItem('token');
   window.location.replace('index.html');
-
-  if (window.history.replaceState) {
-    window.history.replaceState(null, null, 'index.html');
-  }
 }

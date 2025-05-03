@@ -277,3 +277,6 @@ $RECYCLE.BIN/
 
 # End of https://www.gitignore.io/api/linux,macos,python,pycharm,windows,visualstudiocode
 /backend/uploads
+.idea/workspace.xml
+.idea/workspace.xml
+.idea/workspace.xml
