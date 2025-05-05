@@ -3,9 +3,11 @@ from typing import List
 from fastapi import FastAPI, HTTPException, Depends, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import RedirectResponse
+
+from storage import storage
 from database import engine, get_db
 from base import Base
 import crud
@@ -112,10 +114,10 @@ async def remove_file(file_id: str, note_id: int = Query(...), current_user: mod
 
 @app.get("/files/{filename}")
 async def serve_file(filename: str):
-    path = os.path.join(UPLOAD_DIR, filename)
-    if not os.path.exists(path):
+    try:
+        return RedirectResponse(url=storage.get_file_url(filename))
+    except Exception as e:
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(path)
 
 defaut_static = os.getenv("FRONTEND_DIR", "../frontend")
 app.mount("/", StaticFiles(directory=defaut_static, html=True), name="frontend")

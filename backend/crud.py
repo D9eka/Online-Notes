@@ -1,11 +1,14 @@
 import uuid
 import os
+
+from fastapi import HTTPException
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.context import CryptContext
 from datetime import datetime
 from models import User, Note, File
 from sqlalchemy.orm import selectinload
+from storage import storage
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
@@ -63,21 +66,35 @@ async def delete_note(session: AsyncSession, note: Note):
     await session.commit()
     return
 
+
 async def add_file_to_note(session: AsyncSession, note: Note, upload_file) -> File:
     file_id = str(uuid.uuid4())
-    filename = f"{file_id}_{upload_file.filename}"
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    path = os.path.join(UPLOAD_DIR, filename)
-    with open(path, "wb") as f:
-        f.write(await upload_file.read())
-    file = File(id=file_id, filename=upload_file.filename, path=filename, note=note)
+
+    try:
+        file_contents = await upload_file.read()
+        file_extension = os.path.splitext(upload_file.filename)[1]
+        object_name = await storage.upload_file(file_contents, file_extension)
+    except HTTPException as e:
+        raise e
+
+    file = File(
+        id=file_id,
+        filename=upload_file.filename,
+        path=object_name,
+        note=note
+    )
     session.add(file)
     await session.commit()
     await session.refresh(file)
     return file
 
+
 async def delete_file(session: AsyncSession, file: File):
-    os.remove(os.path.join(UPLOAD_DIR, file.path))
+    try:
+        await storage.delete_file(file.path)
+    except HTTPException as e:
+        raise e
+
     await session.delete(file)
     await session.commit()
     return
