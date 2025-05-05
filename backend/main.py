@@ -1,17 +1,24 @@
-from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Depends
+import os
+from typing import List
+from fastapi import FastAPI, HTTPException, Depends, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
-from typing import List
-from datetime import datetime, timedelta
-import os
-import uuid
-from passlib.context import CryptContext
-from jose import JWTError, jwt
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import AsyncSession
+from database import engine, get_db
+from base import Base
+import crud
+import models
+from schemas import Token, NoteCreate, NoteOut, FileInfo
+from auth import authenticate_user, create_access_token, get_current_user
 
 app = FastAPI()
+
+@app.on_event("startup")
+async def on_startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,170 +28,94 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configuration
-SECRET_KEY = "your-secret-key"  # Change this in production
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 
-# In-memory database
-fake_db = []
-current_id = 1
-notes_db = []
-note_id_counter = 1
-
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# OAuth2 scheme
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-# Models
-class User(BaseModel):
-    username: str
-    password: str
-
-class NoteBase(BaseModel):
-    title: str
-    content: str
-
-class NoteCreate(NoteBase):
-    pass
-
-class FileInfo(BaseModel):
-    id: str
-    name: str
-    path: str
-
-class Note(NoteBase):
-    id: int
-    user_id: int
-    created_at: datetime
-    updated_at: datetime
-    files: List[FileInfo] = []
-
-# Helper functions
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    user = next((u for u in fake_db if u["username"] == username), None)
-    if user is None:
-        raise HTTPException(status_code=401, detail="User not found")
-    return user
-
-# Endpoints
-@app.post("/register")
-async def register(user: User):
-    if any(u["username"] == user.username for u in fake_db):
-        raise HTTPException(status_code=400, detail="Username already exists")
-    global current_id
-    hashed_password = pwd_context.hash(user.password)
-    fake_db.append({
-        "id": current_id,
-        "username": user.username,
-        "hashed_password": hashed_password
-    })
-    current_id += 1
-    return {"message": "User created successfully"}
-
-@app.post("/login")
-async def login(user: User):
-    db_user = next((u for u in fake_db if u["username"] == user.username), None)
-    if not db_user or not pwd_context.verify(user.password, db_user["hashed_password"]):
-        raise HTTPException(401, "Invalid credentials")
-    access_token = create_access_token(data={"sub": db_user["username"]})
+@app.post("/signup", response_model=Token)
+async def signup(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
+    user = await crud.get_user_by_username(session, form_data.username)
+    if user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    new_user = await crud.create_user(session, form_data.username, form_data.password)
+    access_token = create_access_token({"sub": new_user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.get("/notes", response_model=List[Note])
-async def get_notes(current_user: dict = Depends(get_current_user)):
-    return [n for n in notes_db if n["user_id"] == current_user["id"]]
+@app.post("/token", response_model=Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: AsyncSession = Depends(get_db)):
+    user = await authenticate_user(session, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    access_token = create_access_token({"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
 
-@app.post("/notes", response_model=Note)
-async def create_note(note: NoteCreate, current_user: dict = Depends(get_current_user)):
-    global note_id_counter
-    new_note = {
-        "id": note_id_counter,
-        "user_id": current_user["id"],
-        **note.dict(),
-        "created_at": datetime.now(),
-        "updated_at": datetime.now(),
-        "files": []
-    }
-    notes_db.append(new_note)
-    note_id_counter += 1
+@app.get("/notes", response_model=List[NoteOut])
+async def list_notes(current_user: models.User = Depends(get_current_user), session: AsyncSession = Depends(get_db)):
+    return await crud.get_notes_for_user(session, current_user.id)
+
+@app.post("/notes", response_model=NoteOut)
+async def create_new_note(
+    note_data: NoteCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    new_note = await crud.create_note(
+        session=db,
+        user_id=current_user.id,
+        title=note_data.title,
+        content=note_data.content
+    )
     return new_note
 
-@app.put("/notes/{note_id}", response_model=Note)
-async def update_note(note_id: int, note: NoteCreate, current_user: dict = Depends(get_current_user)):
-    existing = next((n for n in notes_db if n["id"] == note_id and n["user_id"] == current_user["id"]), None)
-    if not existing:
-        raise HTTPException(404, "Note not found")
-    existing.update({
-        "title": note.title,
-        "content": note.content,
-        "updated_at": datetime.now()
-    })
-    return existing
-
-@app.delete("/notes/{note_id}")
-async def delete_note(note_id: int, current_user: dict = Depends(get_current_user)):
-    global notes_db
-    notes_db = [n for n in notes_db if not (n["id"] == note_id and n["user_id"] == current_user["id"])]
-    return {"message": "Note deleted"}
-
-@app.get("/notes/{note_id}", response_model=Note)
-async def get_note(note_id: int, current_user: dict = Depends(get_current_user)):
-    note = next((n for n in notes_db if n["id"] == note_id and n["user_id"] == current_user["id"]), None)
+@app.get("/notes/{note_id}", response_model=NoteOut)
+async def get_note(
+    note_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    note = await crud.get_note_by_id(db, note_id, current_user.id)
     if not note:
-        raise HTTPException(404, "Note not found")
+        raise HTTPException(status_code=404, detail="Note not found")
     return note
 
-@app.post("/notes/{note_id}/files")
-async def upload_file(note_id: int, file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
-    note = next((n for n in notes_db if n["id"] == note_id and n["user_id"] == current_user["id"]), None)
+@app.put("/notes/{note_id}", response_model=NoteOut)
+async def update_existing_note(note_id: int, note_in: NoteCreate, current_user: models.User = Depends(get_current_user), session: AsyncSession = Depends(get_db)):
+    note = await crud.get_note_by_id(session, note_id, current_user.id)
     if not note:
-        raise HTTPException(404, "Note not found")
-    file_id = str(uuid.uuid4())
-    filename = f"{file_id}_{file.filename}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    with open(file_path, "wb") as f:
-        f.write(await file.read())
-    note["files"].append({
-        "id": file_id,
-        "name": file.filename,
-        "path": filename
-    })
-    return {"id": file_id, "name": file.filename}
+        raise HTTPException(status_code=404, detail="Note not found")
+    return await crud.update_note(session, note, note_in.title, note_in.content)
+
+@app.delete("/notes/{note_id}")
+async def remove_note(note_id: int, current_user: models.User = Depends(get_current_user), session: AsyncSession = Depends(get_db)):
+    note = await crud.get_note_by_id(session, note_id, current_user.id)
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    await crud.delete_note(session, note)
+    return {"message": "Note deleted"}
+
+@app.post("/notes/{note_id}/files", response_model=FileInfo)
+async def upload_note_file(note_id: int, file: UploadFile = File(...), current_user: models.User = Depends(get_current_user), session: AsyncSession = Depends(get_db)):
+    note = await crud.get_note_by_id(session, note_id, current_user.id)
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    file_obj = await crud.add_file_to_note(session, note, file)
+    return FileInfo(id=file_obj.id, filename=file_obj.filename, path=file_obj.path)
 
 @app.delete("/files/{file_id}")
-async def delete_file(file_id: str, note_id: int = Query(...), current_user: dict = Depends(get_current_user)):
-    note = next((n for n in notes_db if n["id"] == note_id and n["user_id"] == current_user["id"]), None)
+async def remove_file(file_id: str, note_id: int = Query(...), current_user: models.User = Depends(get_current_user), session: AsyncSession = Depends(get_db)):
+    note = await crud.get_note_by_id(session, note_id, current_user.id)
     if not note:
-        raise HTTPException(404, "Note not found")
-    file_info = next((f for f in note["files"] if f["id"] == file_id), None)
-    if file_info:
-        os.remove(os.path.join(UPLOAD_DIR, file_info["path"]))
-        note["files"] = [f for f in note["files"] if f["id"] != file_id]
+        raise HTTPException(status_code=404, detail="Note not found")
+    file = next((f for f in note.files if f.id == file_id), None)
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    await crud.delete_file(session, file)
     return {"message": "File deleted"}
 
 @app.get("/files/{filename}")
-async def get_file(filename: str):
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    if not os.path.exists(file_path):
-        raise HTTPException(404, "File not found")
-    return FileResponse(file_path)
+async def serve_file(filename: str):
+    path = os.path.join(UPLOAD_DIR, filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(path)
 
-app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")
+defaut_static = os.getenv("FRONTEND_DIR", "../frontend")
+app.mount("/", StaticFiles(directory=defaut_static, html=True), name="frontend")

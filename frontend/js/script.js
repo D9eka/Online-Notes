@@ -19,11 +19,25 @@ const handleFormSubmit = (formId, endpoint, successMessage, redirectPage) => {
     const password = document.getElementById('password').value;
 
     try {
-      const response = await fetch(`${apiUrl}/${endpoint}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({username, password})
-      });
+      let options;
+      if (endpoint === 'signup' || endpoint === 'token') {
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+        options = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData
+        };
+      } else {
+        options = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        };
+      }
+
+      const response = await fetch(`${apiUrl}/${endpoint}`, options);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -31,11 +45,11 @@ const handleFormSubmit = (formId, endpoint, successMessage, redirectPage) => {
       }
 
       const data = await response.json();
-      if (endpoint === 'login') {
+      if (endpoint === 'token') {
         localStorage.setItem('token', data.access_token);
       }
-      showNotification(successMessage, true);
 
+      showNotification(successMessage, true);
       if (redirectPage) {
         window.location.href = redirectPage;
       }
@@ -85,7 +99,7 @@ async function loadNotes() {
           <p>${note.content.substring(0, 100)}...</p>
           ${note.files.map(file => `
             <div class="file-attachment">
-              <a href="${apiUrl}/files/${file.path}" download="${file.name}">${file.name}</a>
+              <a href="${apiUrl}/files/${file.path}" download="${file.filename}">${file.filename}</a>
             </div>
           `).join('')}
           <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
@@ -166,7 +180,7 @@ async function initNotes() {
           document.getElementById('noteContent').value = note.content;
           document.getElementById('existingFiles').innerHTML = note.files.map(file => `
             <div class="file-attachment">
-              ${file.name}
+              ${file.filename}
               <button onclick="deleteFile('${noteId}', '${file.id}')">×</button>
             </div>
           `).join('');
@@ -179,8 +193,8 @@ async function initNotes() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  handleFormSubmit('loginForm', 'login', 'Login successful!', 'notes.html');
-  handleFormSubmit('registerForm', 'register', 'Registered!', 'index.html');
+  handleFormSubmit('registerForm', 'signup', 'Registered!', 'index.html');
+  handleFormSubmit('loginForm', 'token', 'Login successful!', 'notes.html');
   initNotes().catch(error => {
     console.error('Init failed:', error);
     window.location.replace('index.html');
