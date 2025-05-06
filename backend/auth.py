@@ -4,8 +4,8 @@ from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
-import crud
-from database import get_db
+import backend.crud as crud
+from backend.database import get_db
 
 SECRET_KEY = os.getenv("SECRET_KEY", "secret")
 ALGORITHM = "HS256"

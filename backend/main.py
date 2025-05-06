@@ -7,13 +7,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
 
-from storage import storage
-from database import engine, get_db
-from base import Base
-import crud
-import models
-from schemas import Token, NoteCreate, NoteOut, FileInfo
-from auth import authenticate_user, create_access_token, get_current_user
+from backend.storage import storage
+from backend.database import engine, get_db
+from backend.base import Base
+import backend.crud as crud
+import backend.models as models
+from backend.schemas import Token, NoteCreate, NoteOut, FileInfo
+from backend.auth import authenticate_user, create_access_token, get_current_user
 
 app = FastAPI()
 
@@ -119,5 +119,5 @@ async def serve_file(filename: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail="File not found")
 
-defaut_static = os.getenv("FRONTEND_DIR", "../frontend")
+defaut_static = os.getenv("FRONTEND_DIR", "./frontend")
 app.mount("/", StaticFiles(directory=defaut_static, html=True), name="frontend")

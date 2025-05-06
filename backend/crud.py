@@ -6,9 +6,9 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.context import CryptContext
 from datetime import datetime
-from models import User, Note, File
+from backend.models import User, Note, File
 from sqlalchemy.orm import selectinload
-from storage import storage
+from backend.storage import storage
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
