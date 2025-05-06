@@ -214,8 +214,16 @@ function removeFile(index) {
 }
 
 async function initNotes() {
-  const protectedPaths = ['/notes.html', '/note-editor.html'];
+  const redirectIfAuthenticated = ['/index.html', '/register.html'];
   const currentPath = window.location.pathname;
+  if (redirectIfAuthenticated.some(path => currentPath.endsWith(path))) {
+    const token = localStorage.getItem('token');
+    if (token) {
+      window.location.replace('notes.html');
+      return;
+    }
+  }
+  const protectedPaths = ['/notes.html', '/note-editor.html'];
   if (protectedPaths.some(path => currentPath.endsWith(path))) {
     const token = localStorage.getItem('token');
     if (!token) {
