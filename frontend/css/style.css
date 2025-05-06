@@ -11,6 +11,8 @@ body {
 .container {
     background: rgba(255, 255, 255, 0.95);
     padding: 2.5rem;
+    margin-top: calc(2.5rem + (max(0px, 100vh - 100%) * 0.1));
+    margin-bottom: calc(2.5rem + (max(0px, 100vh - 100%) * 0.1));
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
@@ -50,8 +52,12 @@ button {
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     min-width: 90px;
+    text-align: center;
+    height: 40px;
+    line-height: 40px;
 }
 
 button:hover {
@@ -65,22 +71,32 @@ button:active {
 
 .note-actions button {
     min-width: 90px;
-    padding: 10px 15px !important;
+    padding: 10px 15px;
     justify-content: center;
 }
 
 .header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
     margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.new-note-btn {
+    width: 100%;
+    justify-content: center;
+    margin: 0 0 1rem;
 }
 
 .logout-btn {
     background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
     padding: 10px 20px;
     min-width: 120px;
+    height: 40px;
     font-size: 0.9rem;
+}
+
+.logout-btn:hover {
     box-shadow: 0 3px 10px rgba(250, 82, 82, 0.2);
 }
 
@@ -89,7 +105,10 @@ button:active {
     padding: 12px 24px;
     min-width: 120px;
     font-size: 0.9rem;
-    box-shadow: 0 3px 10px rgba(46, 204, 113, 0.2);
+}
+
+.upload-btn:hover {
+    box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
 }
 
 .file-upload {
@@ -109,29 +128,49 @@ button:active {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    transition: all 0.3s ease;
 }
 
 .file-list-item span {
-    color: #495057;
-    font-size: 0.9rem;
+    color: #333333;
+    font-size: 1rem;
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.file-list-item button {
-    background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
-    padding: 6px 12px;
+.file-list-item button.remove-file-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);padding: 6px 12px;
     min-width: auto;
-    font-size: 0.8rem;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-list-item button.remove-file-btn:hover {
+    box-shadow: 0 3px 10px rgba(250, 82, 82, 0.2);
+}
+
+.file-list-item button.remove-file-btn:before {
+    content: "\f00d";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    font-size: 1rem;
 }
 
 .note-item {
     background: #ffffff;
     border: 1px solid #e9ecef;
     padding: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 1rem;
     border-radius: 12px;
     transition: all 0.3s ease;
     position: relative;
@@ -196,8 +235,7 @@ button:active {
 
 .file-attachment:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(34, 139, 230, 0.3);
-    background: #e9ecef;
+    box-shadow: 0 5px 15px rgba(73, 80, 87, 0.2);
 }
 
 .file-attachment i {
@@ -253,12 +291,15 @@ button:active {
 #noteTitle {
     font-size: 1.2rem;
     padding: 12px;
+    font-family: inherit;
 }
 
 #noteContent {
     font-size: 0.95rem;
     padding: 12px;
     min-height: 200px;
+    resize: none;
+    font-family: inherit;
 }
 
 #fileInput {
@@ -286,14 +327,11 @@ button:active {
     }
 
     .header {
-        flex-direction: column;
-        align-items: flex-start;
         gap: 1rem;
     }
 
     .logout-btn {
         padding: 10px 20px;
-        min-width: 120px;
         width: auto;
     }
 
@@ -307,12 +345,17 @@ button:active {
     }
 
     .file-list-item {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
     }
 
-    .file-list-item button {
-        width: 100%;
+    .file-list-item button.remove-file-btn {
+        width: 28px;
+        height: 28px;
+        padding: 6px;
+        min-width: 28px;
+        justify-content: center;
     }
 }
 

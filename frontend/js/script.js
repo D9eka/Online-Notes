@@ -196,7 +196,7 @@ function updateFileList() {
     fileItem.className = 'file-list-item';
     fileItem.innerHTML = `
       <span>${file.name}</span>
-      <button type="button" onclick="removeFile(${index})">×</button>
+      <button type="button" class="remove-file-btn" onclick="removeFile(${index})"></button>
     `;
     fileList.appendChild(fileItem);
   });
@@ -243,11 +243,10 @@ async function initNotes() {
           document.getElementById('noteContent').value = note.content;
           document.getElementById('existingFiles').innerHTML = note.files.map(file => `
             <div class="file-list-item" data-file-id="${file.id}">
-              ${file.filename}
-              <button type="button" onclick="deleteFile('${noteId}', '${file.id}')">×</button>
+              <span>${file.filename}</span>
+              <button type="button" class="remove-file-btn" onclick="deleteFile('${noteId}', '${file.id}')"></button>
             </div>
           `).join('');
-          // Update submit button icon for editing
           const submitButton = document.querySelector('#noteForm button[type="submit"]');
           submitButton.innerHTML = '<i class="fas fa-edit"></i> Save';
         } catch (error) {
