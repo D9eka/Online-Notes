@@ -3,6 +3,7 @@
 <head>
     <title>Note Editor</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -12,16 +13,23 @@
         <h1 id="editorTitle">New Note</h1>
         <form id="noteForm">
             <input type="text" id="noteTitle" placeholder="Title" required>
-            <textarea id="noteContent" placeholder="Content" rows="12"></textarea>
+            <textarea id="noteContent" placeholder="Content" rows="8"></textarea>
 
             <div id="existingFiles"></div>
 
-            <input type="file" id="fileInput" multiple>
-            <div id="fileList"></div>
+            <div class="file-upload">
+                <input type="file" id="fileInput" multiple style="display: none;">
+                <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-upload"></i> Upload File
+                </button>
+            </div>
+            <div id="fileList" class="file-list"></div>
 
-            <div style="margin-top: 20px;">
-                <button type="submit">Save</button>
-                <button type="button" onclick="location.href='notes.html'">Cancel</button>
+            <div class="form-actions">
+                <button type="submit"><i class="fas fa-save"></i> Save</button>
+                <button type="button" onclick="location.href='notes.html'">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
             </div>
         </form>
     </div>

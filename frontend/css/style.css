@@ -1,71 +1,243 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    padding: 20px;
-    background-color: #f0f2f5;
 }
 
 .container {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
     width: 100%;
     max-width: 800px;
+    transition: transform 0.3s ease;
+    position: relative;
 }
 
 input, textarea {
     width: 100%;
-    padding: 10px;
-    margin: 8px 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 16px;
     box-sizing: border-box;
 }
 
+input:focus, textarea:focus {
+    border-color: #4dabf7;
+    box-shadow: 0 0 0 4px rgba(77, 171, 247, 0.1);
+    outline: none;
+}
+
 button {
-    padding: 10px 20px;
-    background-color: #007bff;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #4dabf7 0%, #228be6 100%);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
-    margin: 5px 0;
+    margin: 8px 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 90px;
 }
 
 button:hover {
-    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(34, 139, 230, 0.3);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.note-actions button {
+    min-width: 90px;
+    padding: 10px 15px !important;
+    justify-content: center;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.logout-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
+    padding: 10px 20px;
+    min-width: 120px;
+    font-size: 0.9rem;
+    box-shadow: 0 3px 10px rgba(250, 82, 82, 0.2);
+}
+
+.upload-btn {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    padding: 12px 24px;
+    min-width: 120px;
+    font-size: 0.9rem;
+    box-shadow: 0 3px 10px rgba(46, 204, 113, 0.2);
+}
+
+.file-upload {
+    margin: 10px 0;
+}
+
+.file-list {
+    margin: 10px 0;
+}
+
+.file-list-item {
+    background: #f1f3f5;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.file-list-item span {
+    color: #495057;
+    font-size: 0.9rem;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-list-item button {
+    background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
+    padding: 6px 12px;
+    min-width: auto;
+    font-size: 0.8rem;
 }
 
 .note-item {
-    background: #fff;
-    border: 1px solid #ddd;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 4px;
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
     position: relative;
-    word-break: break-word;
+    overflow: visible;
+}
+
+.note-item:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
 }
 
 .note-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 .note-item h3 {
+    color: #1864ab;
+    font-size: 1.4rem;
     margin: 0;
-    flex-grow: 1;
-    max-width: calc(100% - 170px);
+    font-weight: 700;
+    flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.note-item p {
+    max-width: 100%;
+    margin: 10px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.note-item small {
+    display: block;
+    margin-top: 8px;
+}
+
+.note-updated {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.file-attachment {
+    background: #f1f3f5;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 8px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: #228be6;
+}
+
+.file-attachment:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(34, 139, 230, 0.3);
+    background: #e9ecef;
+}
+
+.file-attachment i {
+    color: #228be6;
+}
+
+.file-attachment span {
+    color: #495057;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notification {
+    position: fixed;
+    top: 25px;
+    right: 25px;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: none;
+    align-items: center;
+    gap: 12px;
+    animation: slideIn 0.3s ease-out;
+    color: white;
+    font-weight: 500;
+}
+
+.notification.success {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); /* Зеленый градиент для успеха */
+}
+
+.notification.error {
+    background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%); /* Красный градиент для ошибки */
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
 }
 
 .note-actions {
@@ -73,42 +245,86 @@ button:hover {
     gap: 10px;
 }
 
-.file-attachment {
-    margin-top: 10px;
-    padding: 8px;
-    background: #f5f5f5;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+#noteForm {
+    max-width: 600px;
+    margin: 0 auto;
 }
 
-.file-attachment a {
-    color: #007bff;
-    text-decoration: none;
-    margin-left: 8px;
+#noteTitle {
+    font-size: 1.2rem;
+    padding: 12px;
+}
+
+#noteContent {
+    font-size: 0.95rem;
+    padding: 12px;
+    min-height: 200px;
 }
 
 #fileInput {
-    margin: 15px 0;
+    margin: 10px 0;
 }
 
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 25px;
-    border-radius: 4px;
-    color: white;
-    z-index: 1000;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    display: none;
+#existingFiles {
+    margin: 10px 0;
 }
 
-.notification.success {
-    background: #28a745;
+@media (max-width: 768px) {
+    .container {
+        padding: 1.5rem;
+        border-radius: 12px;
+    }
+
+    button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .note-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .logout-btn {
+        padding: 10px 20px;
+        min-width: 120px;
+        width: auto;
+    }
+
+    .logout-btn i {
+        margin-right: 4px;
+    }
+
+    .upload-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .file-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .file-list-item button {
+        width: 100%;
+    }
 }
 
-.notification.error {
-    background: #dc3545;
+button:before {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+}
+
+button[onclick*="editNote"]:before {
+    content: "\f044";
+}
+
+button[onclick*="deleteNote"]:before {
+    content: "\f2ed";
 }

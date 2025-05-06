@@ -3,15 +3,23 @@
 <head>
     <title>My Notes</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 </head>
 <body>
     <div class="container">
-        <h1>My Notes <button onclick="location.href='note-editor.html'">+ New Note</button></h1>
+        <div class="header">
+            <h1>My Notes</h1>
+            <button class="logout-btn" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+        <button onclick="location.href='note-editor.html'">
+            <i class="fas fa-plus"></i> New Note
+        </button>
         <div id="notesList"></div>
-        <p><a href="#" onclick="logout()">Logout</a></p>
     </div>
     <div class="notification" id="notification"></div>
     <script src="js/script.js"></script>

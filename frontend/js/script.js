@@ -98,9 +98,10 @@ async function loadNotes() {
           </div>
           <p>${note.content.substring(0, 100)}...</p>
           ${note.files.map(file => `
-            <div class="file-attachment">
-              <a href="${apiUrl}/files/${file.path}" download="${file.filename}">${file.filename}</a>
-            </div>
+            <a class="file-attachment" href="${apiUrl}/files/${file.path}" download="${file.filename}">
+                <i class="fas fa-paperclip"></i>
+                <span>${file.filename}</span>
+            </a>
           `).join('')}
           <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
         </div>
@@ -113,8 +114,19 @@ async function loadNotes() {
 
 async function deleteFile(noteId, fileId) {
   if (confirm('Delete this file?')) {
-    await authFetch(`${apiUrl}/files/${fileId}?note_id=${noteId}`, { method: 'DELETE' });
-    await loadNotes();
+    try {
+      await authFetch(`${apiUrl}/files/${fileId}?note_id=${noteId}`, { method: 'DELETE' });
+      if (window.location.pathname.endsWith('note-editor.html')) {
+        const fileElement = document.querySelector(`#existingFiles [data-file-id="${fileId}"]`);
+        if (fileElement) {
+          fileElement.remove();
+        }
+      } else if (window.location.pathname.endsWith('notes.html')) {
+        await loadNotes();
+      }
+    } catch (error) {
+      showNotification('Failed to delete file: ' + error.message, false);
+    }
   }
 }
 
@@ -158,6 +170,33 @@ async function uploadFiles(noteId) {
   }
 }
 
+function updateFileList() {
+  const fileInput = document.getElementById('fileInput');
+  const fileList = document.getElementById('fileList');
+  fileList.innerHTML = '';
+  const files = Array.from(fileInput.files);
+  files.forEach((file, index) => {
+    const fileItem = document.createElement('div');
+    fileItem.className = 'file-list-item';
+    fileItem.innerHTML = `
+      <span>${file.name}</span>
+      <button type="button" onclick="removeFile(${index})">×</button>
+    `;
+    fileList.appendChild(fileItem);
+  });
+}
+
+function removeFile(index) {
+  const fileInput = document.getElementById('fileInput');
+  const files = Array.from(fileInput.files);
+  const dt = new DataTransfer();
+  files.forEach((file, i) => {
+    if (i !== index) dt.items.add(file);
+  });
+  fileInput.files = dt.files;
+  updateFileList();
+}
+
 async function initNotes() {
   const protectedPaths = ['/notes.html', '/note-editor.html'];
   const currentPath = window.location.pathname;
@@ -179,15 +218,19 @@ async function initNotes() {
           document.getElementById('noteTitle').value = note.title;
           document.getElementById('noteContent').value = note.content;
           document.getElementById('existingFiles').innerHTML = note.files.map(file => `
-            <div class="file-attachment">
+            <div class="file-list-item" data-file-id="${file.id}">
               ${file.filename}
-              <button onclick="deleteFile('${noteId}', '${file.id}')">×</button>
+              <button type="button" onclick="deleteFile('${noteId}', '${file.id}')">×</button>
             </div>
           `).join('');
+          // Update submit button icon for editing
+          const submitButton = document.querySelector('#noteForm button[type="submit"]');
+          submitButton.innerHTML = '<i class="fas fa-edit"></i> Save';
         } catch (error) {
           console.error('Error loading note:', error);
         }
       }
+      document.getElementById('fileInput').addEventListener('change', updateFileList);
     }
   }
 }
