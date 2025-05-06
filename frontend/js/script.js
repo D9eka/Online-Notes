@@ -87,25 +87,41 @@ async function loadNotes() {
     const notes = await response.json();
     const notesList = document.getElementById('notesList');
     if (notesList) {
-      notesList.innerHTML = notes.map(note => `
-        <div class="note-item">
-          <div class="note-header">
-            <h3>${note.title}</h3>
-            <div class="note-actions">
-              <button onclick="editNote(${note.id})">Edit</button>
-              <button onclick="deleteNote(${note.id})">Delete</button>
+      notesList.innerHTML = notes.map(note => {
+        const updatedAt = new Date(note.updated_at);
+        const formattedDate = isNaN(updatedAt.getTime())
+          ? 'Invalid date'
+          : updatedAt.toLocaleString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            });
+
+        return `
+          <div class="note-item">
+            <div class="note-header">
+              <h3>${note.title}</h3>
+              <div class="note-actions">
+                <button onclick="editNote(${note.id})">Edit</button>
+                <button onclick="deleteNote(${note.id})">Delete</button>
+              </div>
             </div>
+            <p>${note.content.substring(0, 100)}...</p>
+            ${note.files.map(file => `
+              <a class="file-attachment" href="${apiUrl}/files/${file.path}" download="${file.filename}">
+                  <i class="fas fa-paperclip"></i>
+                  <span>${file.filename}</span>
+              </a>
+            `).join('')}
+            <small>Last updated: ${formattedDate}</small>
           </div>
-          <p>${note.content.substring(0, 100)}...</p>
-          ${note.files.map(file => `
-            <a class="file-attachment" href="${apiUrl}/files/${file.path}" download="${file.filename}">
-                <i class="fas fa-paperclip"></i>
-                <span>${file.filename}</span>
-            </a>
-          `).join('')}
-          <small>Last updated: ${new Date(note.updated_at).toLocaleString()}</small>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
   } catch (error) {
     console.error('Error:', error);
