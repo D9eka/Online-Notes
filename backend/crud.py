@@ -30,6 +30,7 @@ async def get_notes_for_user(session: AsyncSession, user_id: int):
         select(Note)
         .where(Note.user_id == user_id)
         .options(selectinload(Note.files))
+        .order_by(Note.created_at.desc())
     )
     return result.scalars().all()
 
