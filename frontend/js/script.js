@@ -1,4 +1,4 @@
-const apiUrl = 'http://localhost:8000';
+const apiUrl = window.location.origin;
 
 // Общие функции
 const showNotification = (message, isSuccess) => {
