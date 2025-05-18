@@ -79,14 +79,20 @@ async def get_note(
     return note
 
 @app.put("/notes/{note_id}", response_model=NoteOut)
-async def update_existing_note(note_id: int, note_in: NoteCreate, current_user: models.User = Depends(get_current_user), session: AsyncSession = Depends(get_db)):
+async def update_existing_note(
+        note_id: int, note_in: NoteCreate,
+        current_user: models.User = Depends(get_current_user),
+        session: AsyncSession = Depends(get_db)):
     note = await crud.get_note_by_id(session, note_id, current_user.id)
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
     return await crud.update_note(session, note, note_in.title, note_in.content)
 
 @app.delete("/notes/{note_id}")
-async def remove_note(note_id: int, current_user: models.User = Depends(get_current_user), session: AsyncSession = Depends(get_db)):
+async def remove_note(
+        note_id: int,
+        current_user: models.User = Depends(get_current_user),
+        session: AsyncSession = Depends(get_db)):
     note = await crud.get_note_by_id(session, note_id, current_user.id)
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
@@ -94,7 +100,11 @@ async def remove_note(note_id: int, current_user: models.User = Depends(get_curr
     return {"message": "Note deleted"}
 
 @app.post("/notes/{note_id}/files", response_model=FileInfo)
-async def upload_note_file(note_id: int, file: UploadFile = File(...), current_user: models.User = Depends(get_current_user), session: AsyncSession = Depends(get_db)):
+async def upload_note_file(
+        note_id: int, file:
+        UploadFile = File(...),
+        current_user: models.User = Depends(get_current_user),
+        session: AsyncSession = Depends(get_db)):
     note = await crud.get_note_by_id(session, note_id, current_user.id)
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
@@ -102,7 +112,11 @@ async def upload_note_file(note_id: int, file: UploadFile = File(...), current_u
     return FileInfo(id=file_obj.id, filename=file_obj.filename, path=file_obj.path)
 
 @app.delete("/files/{file_id}")
-async def remove_file(file_id: str, note_id: int = Query(...), current_user: models.User = Depends(get_current_user), session: AsyncSession = Depends(get_db)):
+async def remove_file(
+        file_id: str,
+        note_id: int = Query(...),
+        current_user: models.User = Depends(get_current_user),
+        session: AsyncSession = Depends(get_db)):
     note = await crud.get_note_by_id(session, note_id, current_user.id)
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")

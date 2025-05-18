@@ -5,10 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="dbd148da-0605-4adf-ab14-80a4d51d5dd5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.dockerignore" beforeDir="false" afterPath="$PROJECT_DIR$/.dockerignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/schemas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/css/style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/js/script.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/js/script.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/note-editor.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/note-editor.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -107,6 +110,7 @@
       <workItem from="1746595455427" duration="14068000" />
       <workItem from="1746632867264" duration="991000" />
       <workItem from="1746708171182" duration="1553000" />
+      <workItem from="1747555167337" duration="3523000" />
     </task>
     <servers />
   </component>

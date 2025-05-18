@@ -1,13 +1,13 @@
 const apiUrl = window.location.origin;
 
-// Общие функции
-const showNotification = (message, isSuccess) => {
-  const notification = document.getElementById('notification');
-  notification.textContent = message;
-  notification.className = `notification ${isSuccess ? 'success' : 'error'}`;
-  notification.style.display = 'block';
-  setTimeout(() => notification.style.display = 'none', 3000);
-};
+document.addEventListener('DOMContentLoaded', () => {
+  handleFormSubmit('registerForm', 'signup', 'Registered!', 'index.html');
+  handleFormSubmit('loginForm', 'token', 'Login successful!', 'notes.html');
+  initNotes().catch(error => {
+    console.error('Init failed:', error);
+    window.location.replace('index.html');
+  });
+});
 
 const handleFormSubmit = (formId, endpoint, successMessage, redirectPage) => {
   const form = document.getElementById(formId);
@@ -128,91 +128,6 @@ async function loadNotes() {
   }
 }
 
-async function deleteFile(noteId, fileId) {
-  if (confirm('Delete this file?')) {
-    try {
-      await authFetch(`${apiUrl}/files/${fileId}?note_id=${noteId}`, { method: 'DELETE' });
-      if (window.location.pathname.endsWith('note-editor.html')) {
-        const fileElement = document.querySelector(`#existingFiles [data-file-id="${fileId}"]`);
-        if (fileElement) {
-          fileElement.remove();
-        }
-      } else if (window.location.pathname.endsWith('notes.html')) {
-        await loadNotes();
-      }
-    } catch (error) {
-      showNotification('Failed to delete file: ' + error.message, false);
-    }
-  }
-}
-
-document.getElementById('noteForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const title = document.getElementById('noteTitle').value;
-  const content = document.getElementById('noteContent').value;
-  const noteId = new URLSearchParams(window.location.search).get('id');
-  try {
-    let response;
-    if (noteId) {
-      response = await authFetch(`${apiUrl}/notes/${noteId}`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({title, content})
-      });
-    } else {
-      response = await authFetch(`${apiUrl}/notes`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({title, content})
-      });
-    }
-    const newNote = await response.json();
-    await uploadFiles(newNote.id);
-    window.location.href = 'notes.html';
-  } catch (error) {
-    alert('Error: ' + error.message);
-  }
-});
-
-async function uploadFiles(noteId) {
-  const files = document.getElementById('fileInput').files;
-  for (const file of files) {
-    const formData = new FormData();
-    formData.append('file', file);
-    await authFetch(`${apiUrl}/notes/${noteId}/files`, {
-      method: 'POST',
-      body: formData
-    });
-  }
-}
-
-function updateFileList() {
-  const fileInput = document.getElementById('fileInput');
-  const fileList = document.getElementById('fileList');
-  fileList.innerHTML = '';
-  const files = Array.from(fileInput.files);
-  files.forEach((file, index) => {
-    const fileItem = document.createElement('div');
-    fileItem.className = 'file-list-item';
-    fileItem.innerHTML = `
-      <span>${file.name}</span>
-      <button type="button" class="remove-file-btn" onclick="removeFile(${index})"></button>
-    `;
-    fileList.appendChild(fileItem);
-  });
-}
-
-function removeFile(index) {
-  const fileInput = document.getElementById('fileInput');
-  const files = Array.from(fileInput.files);
-  const dt = new DataTransfer();
-  files.forEach((file, i) => {
-    if (i !== index) dt.items.add(file);
-  });
-  fileInput.files = dt.files;
-  updateFileList();
-}
-
 async function initNotes() {
   const redirectIfAuthenticated = ['/index.html', '/register.html'];
   const currentPath = window.location.pathname;
@@ -258,14 +173,54 @@ async function initNotes() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  handleFormSubmit('registerForm', 'signup', 'Registered!', 'index.html');
-  handleFormSubmit('loginForm', 'token', 'Login successful!', 'notes.html');
-  initNotes().catch(error => {
-    console.error('Init failed:', error);
-    window.location.replace('index.html');
+function editNote(noteId) {
+  window.location.href = `note-editor.html?id=${noteId}`;
+}
+
+function updateFileList() {
+  const fileInput = document.getElementById('fileInput');
+  const fileList = document.getElementById('fileList');
+  fileList.innerHTML = '';
+  const files = Array.from(fileInput.files);
+  files.forEach((file, index) => {
+    const fileItem = document.createElement('div');
+    fileItem.className = 'file-list-item';
+    fileItem.innerHTML = `
+      <span>${file.name}</span>
+      <button type="button" class="remove-file-btn" onclick="removeFile(${index})"></button>
+    `;
+    fileList.appendChild(fileItem);
   });
-});
+}
+
+async function deleteFile(noteId, fileId) {
+  if (confirm('Delete this file?')) {
+    try {
+      await authFetch(`${apiUrl}/files/${fileId}?note_id=${noteId}`, { method: 'DELETE' });
+      if (window.location.pathname.endsWith('note-editor.html')) {
+        const fileElement = document.querySelector(`#existingFiles [data-file-id="${fileId}"]`);
+        if (fileElement) {
+          fileElement.remove();
+        }
+      } else if (window.location.pathname.endsWith('notes.html')) {
+        await loadNotes();
+      }
+    } catch (error) {
+      showNotification('Failed to delete file: ' + error.message, false);
+    }
+  }
+}
+
+function removeFile(index) {
+  const fileInput = document.getElementById('fileInput');
+  const files = Array.from(fileInput.files);
+  const dt = new DataTransfer();
+  files.forEach((file, i) => {
+    if (i !== index) dt.items.add(file);
+  });
+  fileInput.files = dt.files;
+  updateFileList();
+}
 
 async function deleteNote(noteId) {
   if (confirm('Delete this note?')) {
@@ -274,11 +229,57 @@ async function deleteNote(noteId) {
   }
 }
 
-function editNote(noteId) {
-  window.location.href = `note-editor.html?id=${noteId}`;
+document.getElementById('noteForm')?.addEventListener
+('submit', async (e) => {
+  e.preventDefault();
+  const title = document.getElementById('noteTitle').value;
+  const content = document.getElementById('noteContent').value;
+  const noteId = new URLSearchParams(window.location.search).get('id');
+  try {
+    let response;
+    if (noteId) {
+      response = await authFetch(`${apiUrl}/notes/${noteId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title, content})
+      });
+    } else {
+      response = await authFetch(`${apiUrl}/notes`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title, content})
+      });
+    }
+    const newNote = await response.json();
+    await uploadFiles(newNote.id);
+    window.location.href = 'notes.html';
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+});
+
+async function uploadFiles(noteId) {
+  const files = document.getElementById('fileInput').files;
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append('file', file);
+    await authFetch(`${apiUrl}/notes/${noteId}/files`, {
+      method: 'POST',
+      body: formData
+    });
+  }
 }
 
 function logout() {
   localStorage.removeItem('token');
   window.location.replace('index.html');
 }
+
+const showNotification = (message, isSuccess) => {
+  const notification = document.getElementById('notification');
+  notification.textContent = message;
+  notification.className = `notification ${isSuccess ? 'success' : 'error'}`;
+  notification.style.display = 'block';
+  setTimeout(() => notification.style.display = 'none', 3000);
+};
+

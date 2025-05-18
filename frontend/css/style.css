@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -141,7 +145,8 @@ button:active {
 }
 
 .file-list-item button.remove-file-btn {
-    background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);padding: 6px 12px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
+    padding: 6px 12px;
     min-width: auto;
     width: 32px;
     height: 32px;
@@ -266,11 +271,11 @@ button:active {
 }
 
 .notification.success {
-    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); /* Зеленый градиент для успеха */
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
 }
 
 .notification.error {
-    background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%); /* Красный градиент для ошибки */
+    background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
 }
 
 @keyframes slideIn {
@@ -310,6 +315,11 @@ button:active {
     margin: 10px 0;
 }
 
+img {
+    max-width: 100%;
+    height: auto;
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 1.5rem;
@@ -328,6 +338,7 @@ button:active {
 
     .header {
         gap: 1rem;
+        flex-wrap: wrap;
     }
 
     .logout-btn {
@@ -356,6 +367,10 @@ button:active {
         padding: 6px;
         min-width: 28px;
         justify-content: center;
+    }
+
+    #noteForm {
+        max-width: 100%;
     }
 }
 

@@ -17,7 +17,8 @@ class Note(Base):
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(pytz.UTC))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(pytz.UTC), onupdate=lambda: datetime.now(pytz.UTC))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(pytz.UTC),
+                        onupdate=lambda: datetime.now(pytz.UTC))
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     owner = relationship("User", back_populates="notes")
     files = relationship("File", back_populates="note", cascade="all, delete-orphan")
@@ -29,3 +30,4 @@ class File(Base):
     path = Column(String(500), nullable=False)
     note_id = Column(Integer, ForeignKey("notes.id"), nullable=False)
     note = relationship("Note", back_populates="files")
+
